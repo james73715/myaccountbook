@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭收支記帳</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        select, input[type="number"] {
+            width: 200px;
+            padding: 5px;
+            margin: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<h1>家庭收支記帳</h1>
+
+<!-- 記帳表格 -->
+<table id="recordTable">
+    <thead>
+        <tr>
+            <th>日期</th>
+            <th>收入</th>
+            <th>支出</th>
+            <th>類別</th>
+            <th>備註</th>
+            <th>剩餘金額</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- 這裡會動態加入記錄 -->
+    </tbody>
+</table>
+
+<!-- 記帳輸入區 -->
+<h2>新增記錄</h2>
+<form id="accountForm">
+    <label for="date">日期: </label>
+    <input type="date" id="date" required><br><br>
+    
+    <label for="income">收入: </label>
+    <input type="number" id="income" placeholder="收入金額" required><br><br>
+    
+    <label for="expense">支出: </label>
+    <input type="number" id="expense" placeholder="支出金額" required><br><br>
+    
+    <label for="category">類別: </label>
+    <select id="category">
+        <option value="房貸">房貸</option>
+        <option value="家庭開銷">家庭開銷</option>
+        <option value="水電瓦斯">水電瓦斯</option>
+        <option value="信用卡">信用卡</option>
+        <option value="電話費">電話費</option>
+        <option value="稅金">稅金</option>
+        <option value="其他">其他</option>
+    </select><br><br>
+    
+    <label for="customCategory">如果選擇“其他”，請新增項目: </label>
+    <input type="text" id="customCategory" placeholder="輸入自訂項目" style="display: none;"><br><br>
+    
+    <label for="note">備註: </label>
+    <input type="text" id="note" placeholder="備註"><br><br>
+    
+    <button type="submit">新增記錄</button>
+</form>
+
+<!-- 顯示剩餘金額 -->
+<h3>剩餘金額：<span id="remainingMoney">0</span></h3>
+
+<script>
+// 初始化剩餘金額
+let totalMoney = 0;
+
+// 讀取已保存的記錄（從 localStorage）
+if (localStorage.getItem('records')) {
+    const savedRecords = JSON.parse(localStorage.getItem('records'));
+    savedRecords.forEach(record => {
+        totalMoney += record.income - record.expense;
+        addToTable(record.date, record.income, record.expense, record.category, record.note, totalMoney);
+    });
+}
+
+// 顯示新增的記錄到表格
+function addToTable(date, income, expense, category, note, remainingMoney) {
+    const table = document.getElementById('recordTable').querySelector('tbody');
+    const row = table.insertRow();
+    row.insertCell(0).innerText = date;
+    row.insertCell(1).innerText = income;
+    row.insertCell(2).innerText = expense;
+    row.insertCell(3).innerText = category;
+    row.insertCell(4).innerText = note;
+    row.insertCell(5).innerText = remainingMoney;
+    document.getElementById('remainingMoney').innerText = remainingMoney;
+}
+
+// 表單提交處理
+document.getElementById('accountForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const date = document.getElementById('date').value;
+    const income = parseInt(document.getElementById('income').value) || 0;
+    const expense = parseInt(document.getElementById('expense').value) || 0;
+    const category = document.getElementById('category').value;
+    const note = document.getElementById('note').value;
+
+    if (category === '其他' && document.getElementById('customCategory').value) {
+        const newCategory = document.getElementById('customCategory').value;
+        const select = document.getElementById('category');
+        const option = document.createElement('option');
+        option.value = newCategory;
+        option.textContent = newCategory;
+        select.appendChild(option);
+    }
+
+    totalMoney += income - expense;
+    const record = { date, income, expense, category, note };
+    
+    // 儲存記錄到 localStorage
+    const savedRecords = JSON.parse(localStorage.getItem('records')) || [];
+    savedRecords.push(record);
+    localStorage.setItem('records', JSON.stringify(savedRecords));
+
+    // 顯示記錄
+    addToTable(date, income, expense, category, note, totalMoney);
+
+    // 清空表單
+    document.getElementById('accountForm').reset();
+    document.getElementById('customCategory').style.display = 'none';
+});
+
+// 顯示或隱藏自訂類別欄位
+document.getElementById('category').addEventListener('change', function() {
+    if (this.value === '其他') {
+        document.getElementById('customCategory').style.display = 'inline-block';
+    } else {
+        document.getElementById('customCategory').style.display = 'none';
+    }
+});
+</script>
+
+</body>
+</html>
